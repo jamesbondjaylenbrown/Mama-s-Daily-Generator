@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mama's Daily Generator</title>
+  <style>
+    :root {
+      --gold: #c9913a; --gold-lt: #f0c97a;
+      --purple: #7b4f9e; --purple-lt: #a87bc8;
+      --rose: #d4748c; --warm: #fdf3e7;
+      --card-bg: #fffdf8; --text: #3d2a1a;
+      --muted: #7a5c44; --border: rgba(201,145,58,0.25);
+      --shadow: rgba(123,79,158,0.10);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Georgia, serif; background: var(--warm); color: var(--text); min-height: 100vh; }
+
+    header {
+      background: linear-gradient(135deg, #4a2060 0%, #7b4f9e 50%, #c9913a 100%);
+      padding: 2.5rem 1rem 3rem; text-align: center;
+    }
+    .lotus { font-size: 3rem; margin-bottom: 0.5rem; }
+    header h1 { font-size: clamp(1.8rem,5vw,2.8rem); color: #fff; font-weight: normal; letter-spacing: 0.04em; text-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+    header p.subtitle { color: rgba(255,255,255,0.82); font-style: italic; margin-top: 0.4rem; font-size: 1.05rem; }
+    #date-display {
+      display: inline-block; margin-top: 1rem;
+      background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 30px; padding: 0.35rem 1.2rem; color: #fff; font-size: 0.9rem; letter-spacing: 0.06em;
+    }
+
+    main { max-width: 880px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+    .cards-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
+    @media (min-width: 640px) { .cards-grid { grid-template-columns: 1fr 1fr; } }
+
+    .card {
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: 20px; padding: 1.6rem 1.5rem;
+      box-shadow: 0 4px 24px var(--shadow);
+      transition: transform 0.2s, box-shadow 0.2s;
+      animation: fadeUp 0.5s ease both;
+    }
+    .card:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(123,79,158,0.15); }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
+    .card:nth-child(1){animation-delay:.05s} .card:nth-child(2){animation-delay:.15s}
+    .card:nth-child(3){animation-delay:.25s} .card:nth-child(4){animation-delay:.35s}
+    .card:nth-child(5){animation-delay:.45s}
+
+    .kindness-person { font-size: 1rem; font-weight: bold; color: var(--purple); margin-bottom: 0.2rem; }
+    .kindness-relation { font-size: 0.75rem; font-family: Arial,sans-serif; color: var(--rose); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem; }
+    .kindness-action { font-size: 0.97rem; color: var(--muted); line-height: 1.65; }
+
+    .card-icon { font-size: 2rem; margin-bottom: 0.6rem; display: block; }
+    .card-label { font-size: 0.7rem; font-family: Arial, sans-serif; letter-spacing: 0.14em; text-transform: uppercase; color: var(--purple); font-weight: 600; margin-bottom: 0.3rem; }
+    .card h2 { font-size: 1.25rem; font-weight: normal; line-height: 1.3; margin-bottom: 0.15rem; }
+    .card .composer { font-size: 0.85rem; color: var(--gold); font-style: italic; margin-bottom: 0.75rem; }
+    .card p { font-size: 0.97rem; color: var(--muted); line-height: 1.65; margin-bottom: 0.6rem; }
+    .card p:last-child { margin-bottom: 0; }
+
+    .badge { display: inline-block; background: linear-gradient(135deg,var(--purple),var(--purple-lt)); color: #fff; font-size: 0.75rem; font-family: Arial,sans-serif; padding: 0.25rem 0.8rem; border-radius: 20px; margin-bottom: 0.75rem; }
+    .mood-badge { display: inline-block; background: linear-gradient(135deg,var(--gold),var(--gold-lt)); color: var(--text); font-size: 0.75rem; font-family: Arial,sans-serif; padding: 0.25rem 0.8rem; border-radius: 20px; margin-bottom: 0.75rem; }
+    .loc-badge { display: inline-block; background: linear-gradient(135deg,var(--rose),#e8a0b0); color: #fff; font-size: 0.75rem; font-family: Arial,sans-serif; padding: 0.25rem 0.8rem; border-radius: 20px; margin-bottom: 0.75rem; }
+
+    .card.quote-card { background: linear-gradient(135deg,#fdf8f0,#f5eaf8); border-color: rgba(123,79,158,0.2); text-align: center; }
+    .quote-card blockquote { font-size: 1.12rem; font-style: italic; line-height: 1.75; padding: 0.5rem 1rem; border-left: 3px solid var(--gold); text-align: left; margin: 0.75rem 0 1rem; }
+    .quote-card .attribution { font-size: 0.85rem; color: var(--purple); letter-spacing: 0.06em; font-family: Arial,sans-serif; margin-bottom: 1rem; }
+    .divider { height: 1px; background: linear-gradient(to right,transparent,var(--border),transparent); margin: 0.75rem 0; }
+
+    .tip-box { background: rgba(201,145,58,0.08); border: 1px solid rgba(201,145,58,0.2); border-radius: 10px; padding: 0.65rem 1rem; font-size: 0.88rem; color: var(--muted); font-style: italic; margin-top: 0.5rem; }
+    .tip-box strong { color: var(--gold); font-style: normal; font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; display: block; margin-bottom: 0.2rem; }
+
+    footer { text-align: center; padding: 1.5rem; color: var(--muted); font-size: 0.82rem; font-style: italic; opacity: 0.75; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="lotus">🪷</div>
+  <h1>Mama's Daily Generator</h1>
+  <p class="subtitle">Meditations, music, wonders &amp; wisdom — just for you</p>
+  <div id="date-display"></div>
+</header>
+
+<main>
+  <div class="cards-grid">
+
+    <div class="card">
+      <span class="card-icon">🧘</span>
+      <div class="card-label">Today's Meditation</div>
+      <h2 id="med-title"></h2>
+      <div id="med-badge"></div>
+      <p id="med-desc"></p>
+      <div class="tip-box"><strong>Gentle Tip</strong><span id="med-tip"></span></div>
+    </div>
+
+    <div class="card">
+      <span class="card-icon">🎹</span>
+      <div class="card-label">Classical Piano</div>
+      <h2 id="piano-title"></h2>
+      <div class="composer" id="piano-composer"></div>
+      <div id="piano-mood"></div>
+      <p id="piano-desc"></p>
+    </div>
+
+    <div class="card">
+      <span class="card-icon" id="fact-emoji"></span>
+      <div class="card-label">Fun Fact of the Day</div>
+      <div id="fact-loc"></div>
+      <p id="fact-text"></p>
+    </div>
+
+    <div class="card quote-card">
+      <span class="card-icon">✨</span>
+      <div class="card-label">Daily Wisdom from Yogananda</div>
+      <blockquote id="quote-text"></blockquote>
+      <div class="attribution">— Paramahansa Yogananda</div>
+      <div class="divider"></div>
+      <p id="quote-reflection"></p>
+    </div>
+
+    <div class="card">
+      <span class="card-icon">💝</span>
+      <div class="card-label">Today's Act of Kindness</div>
+      <div class="kindness-person" id="kind-name"></div>
+      <div class="kindness-relation" id="kind-relation"></div>
+      <p class="kindness-action" id="kind-action"></p>
+    </div>
+
+  </div>
+</main>
+
+<footer>Made with love &amp; a little magic &nbsp;🌸</footer>
+
+<script>
+const meditations = [
+  { title:"Loving-Kindness (Metta) Meditation", duration:"15 min", desc:"Begin by sending warmth and love to yourself, then gently extend that circle of kindness to your family, friends, and all beings. This ancient practice softens the heart and fills you with a quiet, radiant joy that lingers all day.", tip:"Place one hand over your heart as you practice — the warmth reminds you to be gentle with yourself first." },
+  { title:"Body Scan for Deep Relaxation", duration:"20 min", desc:"Starting at the crown of your head, slowly travel your awareness down through every part of your body, releasing any tension you find along the way. By the time you reach your toes, you'll feel like you're floating on a warm cloud.", tip:"If your mind wanders, simply notice it with a smile and return to wherever you left off in your body." },
+  { title:"Breath Awareness Meditation", duration:"10 min", desc:"Simply watch the natural rhythm of your breath — the gentle rise and fall — without trying to change it. This deceptively simple practice anchors you in the present moment and brings a profound sense of peace.", tip:"Count your exhales from 1 to 10, then start again. If you lose count, that's perfectly fine — just begin at 1." },
+  { title:"Visualization: Walk in a Peaceful Garden", duration:"15 min", desc:"Close your eyes and imagine yourself walking slowly through a beautiful garden in golden afternoon light. Feel the soft grass beneath your feet, smell the flowers, and let the serenity of this inner sanctuary restore your spirit.", tip:"Make the details as vivid as possible — colors, scents, the warmth of sunlight on your skin." },
+  { title:"Gratitude Meditation", duration:"12 min", desc:"Rest in stillness and let three things you're grateful for arise naturally in your awareness. Sit with each one fully, letting the feeling of thankfulness fill your chest like warm light. This practice is a direct path to happiness.", tip:"End by giving thanks for your own life and the gift of this quiet moment." },
+  { title:"Candle Flame Trataka (Gazing Meditation)", duration:"10 min", desc:"Gently gaze at a candle flame without blinking for as long as comfortable, then close your eyes and hold the image in your mind's eye. This ancient yogic technique strengthens concentration and brings deep inner calm.", tip:"Sit about two feet from the candle, at eye level, in a room without drafts." },
+  { title:"Ocean Breath (Ujjayi) Meditation", duration:"15 min", desc:"Breathe slowly through your nose with a soft constriction in the back of your throat, creating a gentle sound like ocean waves. This soothing breath warms the body, steadies the mind, and carries you into a meditative state.", tip:"The sound of your breath is your anchor — whenever thoughts arise, let the ocean waves guide you back." },
+  { title:"Walking Meditation in Nature", duration:"20 min", desc:"Step outside and walk very slowly, feeling each footfall with full awareness. Let your senses open to the sounds of birds, the touch of the breeze, the colors around you. Nature has a remarkable way of healing and restoring.", tip:"Leave your phone inside. Let this be a true gift of undivided presence to yourself and the world around you." },
+  { title:"Heart Chakra Opening Meditation", duration:"15 min", desc:"Breathe gently into the center of your chest and imagine a soft emerald-green light growing there with each inhale. Feel it expand outward in all directions, dissolving any tightness or sadness, filling you with warmth and compassion.", tip:"You can softly hum the sound 'YAM' on each exhale — it is the seed mantra of the heart center." },
+  { title:"Yoga Nidra (Yogic Sleep)", duration:"30 min", desc:"Lie down comfortably and follow a gentle rotation of awareness through different parts of your body, then through pairs of opposite sensations. You hover between waking and sleep in a state of profound, healing rest.", tip:"Even if you fall asleep, your subconscious continues to absorb the practice. There is no wrong way to do Yoga Nidra." },
+  { title:"So Hum Mantra Meditation", duration:"15 min", desc:"With eyes closed, silently repeat 'So' on the inhale and 'Hum' on the exhale — an ancient Sanskrit mantra meaning 'I am that.' This practice connects you to the vast, peaceful awareness that is your truest nature.", tip:"Don't force the mantra to match your breath perfectly. Let both be natural and easy." },
+  { title:"Mindful Listening Meditation", duration:"10 min", desc:"Sit quietly and open your ears to all the sounds around you — near and far, pleasant and neutral — without labeling or judging them. Simply receive them like music. This practice reveals how much peace is available in any ordinary moment.", tip:"Begin with eyes closed, then gently open them halfway and notice how sight and sound together create a rich tapestry of presence." },
+  { title:"Inner Smile Meditation", duration:"12 min", desc:"Bring a gentle, soft smile to your face and then, imaginatively, smile into your heart, your stomach, your lungs — sending warmth and kindness to each organ. This beautiful Taoist practice fills you with a quiet, glowing happiness.", tip:"Imagine your inner organs smiling back at you. Your body is your faithful companion and deserves your love." },
+  { title:"Sunset Visualization Meditation", duration:"15 min", desc:"Close your eyes and picture yourself sitting peacefully watching a magnificent sunset over the ocean. Watch the colors shift — rose gold, deep orange, violet — as the sun descends. Let the day's worries dissolve with the light.", tip:"Stay with the image of the dark, star-filled sky that follows. Rest in the vastness and feel how held you are." },
+  { title:"Crystal Bowl Sound Meditation", duration:"20 min", desc:"Imagine (or play) the resonant tones of crystal singing bowls and let the sound vibrations move through your body. Each tone corresponds to a different energy center, gently clearing and balancing your whole being.", tip:"You can find crystal bowl recordings on YouTube or Spotify — simply lie down, close your eyes, and let the sound do the work." },
+  { title:"Forgiveness Meditation", duration:"15 min", desc:"Gently bring to mind anyone — including yourself — toward whom you carry any heaviness. Silently offer the phrase 'I forgive you. I release this. I wish you peace.' Forgiveness is the most powerful gift you can give your own heart.", tip:"This practice may feel hard at first. Be very patient and gentle. Even a small opening is enough." },
+  { title:"Morning Sun Salutation Meditation", duration:"10 min", desc:"Stand facing the rising sun (or simply face east) and breathe deeply. With each inhale, imagine drawing golden light into your body; with each exhale, let it radiate out through your skin. Greet the new day as a gift.", tip:"Place both palms together at your heart in a prayer gesture and offer one sincere intention for the day ahead." },
+  { title:"Chakra Balancing Meditation", duration:"20 min", desc:"Journey from the base of your spine to the crown of your head, pausing at each of the seven energy centers. Breathe light into each one, noticing any areas that feel tight or dim, and gently invite them to open and brighten.", tip:"Start from the root (red, earth, stability) and work upward. Move at whatever pace feels right for you today." },
+  { title:"Mudra Meditation with Gyan Mudra", duration:"10 min", desc:"Sit comfortably with the tips of your thumbs and index fingers touching, hands resting on your knees, and simply breathe. This classic hand position — the gesture of wisdom — naturally quiets the mind and invites clarity.", tip:"Notice how even this small gesture shifts the quality of your awareness. The body is full of hidden wisdom." },
+  { title:"Mountain Meditation", duration:"15 min", desc:"Imagine yourself as an ancient, immovable mountain. Seasons change, storms come and go, but you remain serene and solid at your core. This powerful practice builds an unshakeable sense of inner stability and calm.", tip:"When you open your eyes, carry the mountain with you. You can return to this steadiness in any difficult moment." },
+];
+
+const piano = [
+  { title:"Clair de Lune", composer:"Claude Debussy", mood:"Dreamy & luminous", desc:"This timeless piece floats like moonlight on still water, carrying you gently into a world of pure beauty. Its liquid, shimmering notes have a way of making everything feel soft and wonderfully quiet." },
+  { title:"Gymnopédie No. 1", composer:"Erik Satie", mood:"Tender & unhurried", desc:"Satie wrote this as an invitation to slow down and simply be. Its unhurried, gentle melody wraps around you like a warm shawl and reminds you that stillness is its own form of joy." },
+  { title:"Nocturne in E-flat major, Op. 9 No. 2", composer:"Frédéric Chopin", mood:"Romantic & serene", desc:"Chopin's most beloved nocturne sings a lullaby to the soul. Its singing melody and tender ornamentation feel like a love letter written in pure sound — perfect for a quiet, reflective evening." },
+  { title:"Für Elise", composer:"Ludwig van Beethoven", mood:"Gentle & wistful", desc:"Even after two centuries, this little piece still feels like a secret between you and Beethoven. Its delicate, lilting theme has an almost magical ability to bring a smile to the face and peace to the heart." },
+  { title:"Liebestraum No. 3", composer:"Franz Liszt", mood:"Warm & passionate", desc:"'Liebestraum' means 'Dream of Love,' and Liszt meant every note of it. This sweeping, tender piece rises and falls like a long embrace, leaving you feeling both moved and somehow more alive." },
+  { title:"Prelude in C Major, BWV 846", composer:"Johann Sebastian Bach", mood:"Clear & meditative", desc:"Bach built this pure, flowing prelude from a simple idea, and its unhurried arpeggios feel like sunlight rippling across water. It has a quality of absolute clarity and peace that few pieces can match." },
+  { title:"Moonlight Sonata, 1st Movement", composer:"Ludwig van Beethoven", mood:"Contemplative & deep", desc:"Written in the quiet hours of the night, this movement moves with the slow, steady pulse of moonlight reflected in dark water. It invites you into a depth of feeling that is both moving and strangely comforting." },
+  { title:"Ballade No. 1 in G minor", composer:"Frédéric Chopin", mood:"Dramatic & storytelling", desc:"Chopin pours an entire novel into this single piece — longing, tenderness, urgency, and breathtaking beauty. Listening to it feels like being swept up in a magnificent, bittersweet dream." },
+  { title:"Kinderszenen: Träumerei", composer:"Robert Schumann", mood:"Sweet & nostalgic", desc:"'Träumerei' means 'Dreaming,' and this brief, perfect piece does exactly that — it dreams tenderly of childhood innocence and simple happiness. It always manages to touch something very deep." },
+  { title:"Arabesque No. 1", composer:"Claude Debussy", mood:"Playful & flowing", desc:"Light and graceful as a butterfly, this early Debussy piece dances through major and minor modes with effortless charm. It will lift your spirits and fill the room with a sense of gentle, natural beauty." },
+  { title:"Golliwogg's Cakewalk", composer:"Claude Debussy", mood:"Joyful & whimsical", desc:"Pure musical delight — Debussy wrote this for his daughter, and it still brims with the same playful joy today. Its bouncy rhythms and funny little quotations are guaranteed to make you smile." },
+  { title:"Rondo alla Turca (Turkish March)", composer:"Wolfgang Amadeus Mozart", mood:"Bright & energetic", desc:"Mozart at his most sparkling and irresistible. This jubilant march bounces along with such infectious good humor that it's nearly impossible not to feel your spirits lifted immediately." },
+  { title:"Piano Sonata No. 16 in C major, K. 545", composer:"Wolfgang Amadeus Mozart", mood:"Pure & cheerful", desc:"Mozart called this 'for beginners,' but its elegant simplicity is actually the product of supreme mastery. Its sunny, uncomplicated joy is the perfect soundtrack for a beautiful, ordinary day." },
+  { title:"The Well-Tempered Clavier: Prelude No. 2", composer:"Johann Sebastian Bach", mood:"Curious & intricate", desc:"This quicksilver prelude dances with an irresistible, almost mischievous energy. Bach's fingers seem to be chasing something delightful just around the corner, and you find yourself happily following along." },
+  { title:"Waltz in A minor, B. 150", composer:"Frédéric Chopin", mood:"Gentle & bittersweet", desc:"This small, unpretentious waltz has a quiet honesty that is deeply touching. Chopin seems to be speaking directly to you — softly, without pretense — about the beauty and sadness woven into everyday life." },
+  { title:"Impromptu in A-flat major, Op. 90 No. 4", composer:"Franz Schubert", mood:"Brilliant & warm", desc:"Schubert's fingers fly over the keyboard in this shimmering tour de force, yet underneath the dazzling surface lies a melody of heartbreaking sweetness. It is both exhilarating and profoundly human." },
+  { title:"Fantasy Impromptu, Op. 66", composer:"Frédéric Chopin", mood:"Dramatic & tender", desc:"A breathtaking contrast between stormy outer sections and a singing, heartfelt middle melody. That central theme is one of the most beautiful things ever written — pure Chopin, pure emotion, pure grace." },
+  { title:"Consolation No. 3 in D-flat major", composer:"Franz Liszt", mood:"Soothing & celestial", desc:"Liszt composed his Consolations as musical balm for the soul, and this third one is the most beloved — a slowly unfolding hymn of extraordinary tenderness that seems to come from another, gentler world." },
+  { title:"Allegro in B-flat major, K. 3", composer:"Wolfgang Amadeus Mozart", mood:"Bright & innocent", desc:"Mozart wrote this at age six — SIX — and even here you can hear the boundless joy and natural elegance that would define his whole life. It is music as pure as a child's laughter." },
+  { title:"Evening Prayer (Hänsel und Gretel)", composer:"Engelbert Humperdinck (arr. for piano)", mood:"Peaceful & devotional", desc:"This simple, heart-melting melody from Humperdinck's fairy-tale opera has all the warmth of a mother's goodnight kiss. Listening to it at the end of the day brings a wonderful sense of protection and peace." },
+];
+
+const facts = [
+  { loc:"Germany", emoji:"🇩🇪🏰", text:"Germany is home to over 20,000 castles and castle ruins — more than any other country in the world. Many sit hidden in forested hills along the Rhine and Mosel rivers, like something straight out of a fairy tale." },
+  { loc:"Japan", emoji:"🇯🇵🌸", text:"Japan has more than 6,800 islands, though most people think of it as a single landmass. The four main islands make up about 97% of the total land area — the rest are a beautiful, largely undiscovered scattering of smaller isles." },
+  { loc:"Miami", emoji:"🌴🌊", text:"Miami is the only major U.S. city that was founded by a woman. Julia Tuttle, a Cleveland businesswoman, convinced Henry Flagler to extend his railroad south by sending him fresh orange blossoms during the great freeze of 1894 — proof that Miami was spared." },
+  { loc:"Germany", emoji:"🇩🇪🍞", text:"Germany has more varieties of bread than any other country — over 3,200 officially registered types! Bread is so culturally important that German bread culture was added to the UNESCO Intangible Cultural Heritage list in 2014." },
+  { loc:"Japan", emoji:"🇯🇵🎎", text:"Japan has the world's oldest continuously operating company: Kongō Gumi, a construction firm that built Buddhist temples from 578 AD until 2006 — an astonishing 1,428 years of family business across 40 generations." },
+  { loc:"Miami", emoji:"🌺🎨", text:"Miami's Wynwood Walls neighborhood transformed from a forgotten warehouse district into the world's largest open-air street art museum. Today it displays giant murals by world-famous artists and attracts over one million visitors a year." },
+  { loc:"Germany", emoji:"🇩🇪📚", text:"Johannes Gutenberg, who invented the modern printing press around 1440 in Mainz, Germany, helped make the entire Renaissance possible. His invention meant that for the first time in history, books could be read by ordinary people." },
+  { loc:"Japan", emoji:"🇯🇵🦌", text:"In Nara, Japan, over 1,200 wild deer roam freely through the city's park and streets. They are considered sacred messengers of the gods and are so accustomed to people that they bow their heads to ask for treats." },
+  { loc:"Miami", emoji:"🌊🐬", text:"Biscayne Bay, right at Miami's doorstep, is home to a remarkable population of bottlenose dolphins. On any given boat ride, you're very likely to see them playing in the wake — Miami's most joyful permanent residents." },
+  { loc:"Germany", emoji:"🇩🇪🌲", text:"The Black Forest (Schwarzwald) inspired the Brothers Grimm fairy tales — it really is that beautiful and ancient. Today it's also famous for the world's highest density of cuckoo clocks, with some workshops making pieces that take months to complete." },
+  { loc:"Japan", emoji:"🇯🇵🍵", text:"The Japanese tea ceremony (chado) is a profound meditative art form that can take years — even decades — to truly master. Every movement is intentional, from the way the whisk is held to how the tea bowl is admired, turned, and sipped." },
+  { loc:"Miami", emoji:"🌴🏗️", text:"Miami Beach's Art Deco Historic District is the largest concentration of Art Deco architecture in the world. Over 800 buildings from the 1920s–40s were preserved, painted in pastel colors, and they give the city its uniquely glamorous, sun-drenched character." },
+  { loc:"Germany", emoji:"🇩🇪🎶", text:"Germany has given the world an extraordinary number of classical composers: Bach, Beethoven, Brahms, Handel, Schumann, and Wagner were all German. This tiny country shaped the sound of classical music more than any other nation on earth." },
+  { loc:"Japan", emoji:"🇯🇵🌺", text:"Japan has a beautiful tradition called 'hanami' — flower viewing — where friends and families gather under cherry blossom trees in spring to picnic, share food, and simply appreciate the fleeting beauty of the blooms. It is a national celebration of impermanence." },
+  { loc:"Miami", emoji:"🌴🐊", text:"American crocodiles — much rarer than alligators — live in the waters around Miami and the Florida Keys. Miami is one of the very few places in the world where you can find both alligators and crocodiles living side by side in the wild." },
+  { loc:"Germany", emoji:"🇩🇪🏥", text:"Germany established the world's first social health insurance system in 1883, under Chancellor Otto von Bismarck. This pioneering idea — that society should take care of its sick — eventually inspired healthcare systems around the entire world." },
+  { loc:"Japan", emoji:"🇯🇵⛰️", text:"Mount Fuji has been painted and photographed more than perhaps any other mountain on earth, yet it remains an active volcano. It last erupted in 1707, and its perfectly symmetrical cone is considered so beautiful that it is itself a UNESCO World Heritage Site." },
+  { loc:"Miami", emoji:"🌊🎵", text:"Miami played a central role in the birth of disco, the Miami Sound Machine, and Latin pop music. The city's unique blend of Caribbean, Latin American, and American cultures created a musical melting pot unlike anywhere else in the world." },
+  { loc:"Germany", emoji:"🇩🇪🚗", text:"Germany invented the automobile. Karl Benz built the first true gasoline-powered car in 1885 in Mannheim. His wife, Bertha Benz, then drove it 66 miles to visit her mother — the first long-distance car trip in history — to prove it actually worked." },
+  { loc:"Japan", emoji:"🇯🇵🤖", text:"Japan has more robots per worker than any other country on earth. But far from replacing human connection, many Japanese robots are designed for companionship — like PARO, a therapeutic robotic seal that brings genuine comfort to elderly patients." },
+  { loc:"Miami", emoji:"🌺🦜", text:"The Miami area is home to over 300 species of birds, including enormous flocks of wild parrots — descendants of escaped pets — that now live in the palms and make the most wonderfully noisy, colorful neighbors imaginable." },
+  { loc:"Germany", emoji:"🇩🇪🍺", text:"The Bavarian Beer Purity Law (Reinheitsgebot) of 1516 is one of the oldest food-safety regulations still in use anywhere in the world. It originally specified that beer could only be made from water, barley, and hops — nothing else." },
+  { loc:"Japan", emoji:"🇯🇵🌊", text:"Japan maintains a remarkable 7-Eleven culture: the country has over 21,000 locations — the world's largest concentration — and they are genuinely sophisticated, stocking fresh sushi, hot meals, banking services, and beautiful seasonal sweets." },
+  { loc:"Miami", emoji:"🌴🌇", text:"Miami's skyline has grown faster than almost any other American city. In 1950 it had barely a handful of tall buildings; today it has the third-largest skyline in the United States, after New York and Chicago — a stunning transformation in just 70 years." },
+  { loc:"Germany", emoji:"🇩🇪🌿", text:"Germany is one of the world's leaders in renewable energy. On some sunny, windy days, renewables produce more than 100% of the country's electricity needs — meaning Germany actually exports clean energy to its neighbors." },
+  { loc:"Japan", emoji:"🇯🇵🍣", text:"Jiro Ono, the 97-year-old sushi master featured in the documentary 'Jiro Dreams of Sushi,' still works at his tiny 10-seat restaurant in a Tokyo subway station. It holds three Michelin stars — the highest honor in the culinary world — and has a months-long waitlist." },
+  { loc:"Miami", emoji:"🌊🌀", text:"Miami has survived over a dozen major hurricanes since European settlement, including the catastrophic 1926 hurricane that nearly destroyed the city. Each time, Miami rebuilt itself — and somehow came back more vibrant, colorful, and alive than before." },
+  { loc:"Germany", emoji:"🇩🇪🎄", text:"The Christmas tree tradition was born in Germany. The custom of decorating an evergreen tree at Christmastime spread from German immigrant communities to England (via Prince Albert) and then to the rest of the world in the 19th century." },
+  { loc:"Japan", emoji:"🇯🇵🏯", text:"Himeji Castle, built in the 14th century, is considered the finest surviving example of Japanese castle architecture. Its brilliant white exterior earned it the nickname 'White Egret Castle,' and it has never been destroyed in battle or by fire in 700 years." },
+  { loc:"Miami", emoji:"🌺🌎", text:"Over 70 languages are spoken in Miami-Dade County, making it one of the most linguistically diverse places on earth. Walking a few blocks in Miami, you might hear Spanish, Haitian Creole, Portuguese, French, and a dozen more — a true crossroads of the Americas." },
+];
+
+const quotes = [
+  { quote:"You do not have a soul. You are a soul. You have a body.", reflection:"This simple reminder invites us to stop identifying with our worries, our aches, our limitations, and remember the vast and peaceful awareness that we truly are. Today, rest in who you really are." },
+  { quote:"Live quietly in the moment and see the beauty of all before you.", reflection:"There is so much beauty available in this very instant — in the quality of light, in a cup of tea, in the sound of your own breathing. Yogananda reminds us that peace is not found by searching for it, but by stopping and noticing what is already here." },
+  { quote:"The season of failure is the best time for sowing the seeds of success.", reflection:"Every difficulty we face is secretly preparing the ground for something wonderful. When things feel hard, it helps to remember that the soil is being turned over — and what we plant now in patience and courage will bloom in its perfect time." },
+  { quote:"Remain calm, serene, always in command of yourself. You will then find out how easy it is to get along.", reflection:"Inner calm is not a luxury — it is the most practical tool we have. When we stop reacting and start responding from a place of quiet centeredness, life's challenges become manageable and even interesting rather than overwhelming." },
+  { quote:"The happiness of one's own heart alone cannot satisfy the soul; one must try to include, as necessary to one's own happiness, the happiness of others.", reflection:"We are woven together. When we actively look for ways to contribute to the happiness of people around us — even in small ways — something miraculous happens: our own hearts fill up in return." },
+  { quote:"In the garden of thy heart, plant naught but the rose of love.", reflection:"The thoughts we tend most carefully are the ones that bloom most fully in our lives. Today is a perfect day to weed out any thoughts of resentment or worry and plant something kind, beautiful, and loving in their place." },
+  { quote:"Seek simplicity and you will find it, along with peace.", reflection:"We often make life far more complicated than it needs to be. When we simplify — our schedules, our desires, our inner conversation — a spaciousness opens up that allows genuine peace to settle in and stay." },
+  { quote:"Persistence guarantees that results are inevitable.", reflection:"Every small, consistent step toward something good is a victory. We don't need to see the whole staircase to take the next step. Yogananda's promise is simple and true: if we keep going, we will arrive." },
+  { quote:"Change yourself and you have done your part in changing the world.", reflection:"The world is transformed one heart at a time — and the heart most available to us is our own. Every moment we choose kindness over impatience, generosity over fear, or peace over reactivity, we send ripples outward that we cannot even begin to measure." },
+  { quote:"You must not let your life run in the ordinary way; do something that nobody else has done, something that will dazzle the world.", reflection:"You have a unique gift that no one else in the world possesses. Today, let yourself dream a little — what would you do if you truly believed that the extraordinary was not only possible, but meant for you?" },
+  { quote:"Learn to be calm and you will always be happy.", reflection:"Happiness is not something that happens to us — it is a quality of being that becomes available when the noise settles. Even a few minutes of stillness each day begins to build the habit of happiness from the inside out." },
+  { quote:"There is a magnet in your heart that will attract true friends. That magnet is unselfishness, thinking of others first.", reflection:"The most magnetic quality any person can have is genuine interest in and care for others. When we stop trying to get and start thinking about how to give, something beautiful and unexpected begins to come back to us." },
+  { quote:"Pray deeply. Live beautifully.", reflection:"These four words contain a complete philosophy for living. Deep prayer connects us to the source of all things; from that connection, beauty naturally expresses itself in everything we do and say and create." },
+  { quote:"The power of unfulfilled desires is the root of all man's slavery.", reflection:"Every time we pause before reacting to a craving — for food, for approval, for distraction — and simply observe it with curiosity rather than immediately satisfying it, we discover that we are freer than we thought." },
+  { quote:"Be as simple as you can be; you will be astonished to see how uncomplicated and happy your life can become.", reflection:"Simplicity is a radical and courageous choice in a world that rewards complexity. But those who make this choice consistently discover a lightness and a joy that all the complexity in the world could never provide." },
+  { quote:"Do not mistake activity for achievement.", reflection:"Being busy is not the same as moving forward. Today is a good day to pause and ask: is what I am doing truly meaningful, or am I just filling time? The most important things in life rarely feel urgent — but they matter the most." },
+  { quote:"You were made for joy. If you choose not to experience joy, you are contradicting the very purpose of your existence.", reflection:"Joy is not self-indulgent — it is your birthright and your responsibility. When you are genuinely joyful, you are at your most generous, creative, and loving. Choosing joy is one of the most unselfish things you can do." },
+  { quote:"To be humble to superiors is duty; to equals, courtesy; to inferiors, nobility.", reflection:"True nobility has nothing to do with rank or wealth — it is expressed in how we treat everyone, especially those who have less power than us. Today, look for one small opportunity to be unexpectedly kind to someone." },
+  { quote:"Stillness is the altar of spirit.", reflection:"In the busyness of daily life, we forget that something vast and peaceful lives right at the center of us, available at any moment. Even one minute of genuine stillness — just sitting, just being — can reconnect us to that inner altar." },
+  { quote:"Awake! Arise! Stop not till the goal is reached.", reflection:"This is Yogananda at his most encouraging — a loving reminder that we have everything we need within us already. Whatever you are working toward, keep going with faith and patience. The goal you are reaching for is reaching back for you." },
+];
+
+const family = [
+  { name:"Tiago", relation:"Son", emoji:"👦", acts:[
+    "Send Tiago a voice message just to say you love him and are proud of who he is — no reason needed.",
+    "Text Tiago one specific memory you treasure from when he was little.",
+    "Ask Tiago what he's been excited about lately and really listen without giving advice.",
+    "Send Tiago a funny meme or photo that made you think of him.",
+    "Tell Tiago one quality you admire in him that you've never said out loud before.",
+    "Cook or order his favourite food and invite him to share it with you.",
+    "Write Tiago a short note — even three sentences — about what a gift he is in your life.",
+    "Ask Tiago to teach you something he loves or knows well, and let yourself be the student.",
+  ]},
+  { name:"Rachie", relation:"Husband", emoji:"💑", acts:[
+    "Leave Rachie a little love note somewhere unexpected — his wallet, his pillow, his coffee mug.",
+    "Tell Rachie one specific thing he does that makes your life genuinely better.",
+    "Plan a small surprise — his favourite treat, a favourite film, or just a long walk together.",
+    "Give Rachie your full, phone-free attention for one whole evening.",
+    "Ask Rachie about something that's been on his mind and just listen with your whole heart.",
+    "Send Rachie a message in the middle of the day just to say you're thinking of him.",
+    "Do something thoughtful that you know Rachie would normally do for himself — before he has to ask.",
+    "Reminisce together about a happy shared memory and let yourselves laugh about it.",
+  ]},
+  { name:"Halina", relation:"Daughter", emoji:"👧", acts:[
+    "Send Halina a message that celebrates exactly who she is right now — not what she does, just who she is.",
+    "Ask Halina to share something she's been creating, reading, or thinking about lately.",
+    "Tell Halina a specific moment when you saw her handle something beautifully.",
+    "Send Halina something that reminded you of her — a song, a photo, a funny clip.",
+    "Write Halina three things you love most about her and send them out of the blue.",
+    "Ask Halina about a dream or goal she has and tell her you believe in her completely.",
+    "Plan a small mother-daughter treat — even just a favourite coffee or snack together.",
+    "Tell Halina one way she has made you a better person.",
+  ]},
+  { name:"Suelika", relation:"Sister", emoji:"👯", acts:[
+    "Call Suelika just to chat — no agenda, no reason, just to hear her voice.",
+    "Send Suelika a photo from your shared past that still makes you smile.",
+    "Tell Suelika one thing you have always admired about her that you've never quite said.",
+    "Send Suelika a care package or a little treat in the post — something you know she'd love.",
+    "Text Suelika something that happened today and made you think 'Suelika would laugh at this.'",
+    "Ask Suelika how she's really doing and give her the space to be honest.",
+    "Suggest a date to visit each other and actually put it in the calendar.",
+    "Write Suelika a few lines about what her friendship as a sister has meant to your life.",
+  ]},
+  { name:"Niko", relation:"Brother", emoji:"🤗", acts:[
+    "Send Niko a message checking in on how he's really doing.",
+    "Share a funny or nostalgic memory with Niko that only the two of you would understand.",
+    "Tell Niko one thing you genuinely respect about him.",
+    "Send Niko something that made you think of him — a song, a link, a photo.",
+    "Suggest doing something together soon — even a call or a short visit.",
+    "Ask Niko about something he's working on or excited about right now.",
+    "Tell Niko you love him — sometimes the simplest words are the ones we forget to say.",
+    "Find an old photo of the two of you and send it with a warm memory attached.",
+  ]},
+  { name:"Oma", relation:"Mother", emoji:"🌹", acts:[
+    "Call Oma and ask her to tell you a story from her life that you've never heard.",
+    "Tell Oma specifically how her love has shaped who you are today.",
+    "Send Oma flowers or a small gift — just because it's a Tuesday and she deserves it.",
+    "Ask Oma to share a recipe she knows by heart and write it down together.",
+    "Sit with Oma without any phone or distraction and let her lead the conversation.",
+    "Tell Oma one thing she did as a mother that you have always been grateful for.",
+    "Ask Oma what she's looking forward to and make plans around one of her wishes.",
+    "Write Oma a letter — by hand if possible — telling her what she means to you.",
+  ]},
+  { name:"Kajus", relation:"Nephew", emoji:"⚽", acts:[
+    "Send Kajus a message asking what his favourite thing is right now — sport, game, anything.",
+    "Tell Kajus one thing that makes him special in your eyes.",
+    "Send Kajus a fun challenge or riddle to solve and tell him he's brilliant.",
+    "Ask Kajus to teach you something he's good at and be genuinely impressed.",
+    "Plan a small adventure or outing with Kajus and let him help choose what to do.",
+    "Find out what Kajus is excited about and send him something related — a book, a kit, a surprise.",
+    "Write Kajus a short, enthusiastic note about how proud you are of him.",
+    "Simply spend uninterrupted time with Kajus doing whatever he wants to do.",
+  ]},
+  { name:"Lucian", relation:"Nephew", emoji:"🎨", acts:[
+    "Ask Lucian what he's been making, drawing, or imagining lately and ask to see it.",
+    "Tell Lucian one specific thing that makes him wonderfully unique.",
+    "Send Lucian a creative challenge — draw this, build this, invent this — and celebrate the result.",
+    "Ask Lucian to tell you a story he makes up on the spot and listen to every word.",
+    "Find a book, game, or activity that matches something Lucian loves and give it to him.",
+    "Write Lucian a silly, loving poem about him and send it as a surprise.",
+    "Tell Lucian about something from your childhood that he might find funny or amazing.",
+    "Plan a special one-on-one activity with Lucian and let him feel like the centre of the world.",
+  ]},
+  { name:"Phileas", relation:"Nephew", emoji:"🌟", acts:[
+    "Send Phileas a message that makes him feel truly seen and special.",
+    "Ask Phileas what superpower he would choose and have a real conversation about it.",
+    "Tell Phileas one thing about him that genuinely makes you smile every time.",
+    "Find something Phileas would think is the coolest thing ever and share it with him.",
+    "Let Phileas be in charge of one decision during your next time together — big or small.",
+    "Write Phileas a little note that says exactly why you love him, in simple words.",
+    "Send Phileas a surprise in the post — even a small sticker or funny postcard means the world.",
+    "Ask Phileas what he dreams about for when he grows up and take every answer seriously.",
+  ]},
+];
+
+function dayOfYear(d) {
+  const start = new Date(d.getFullYear(), 0, 0);
+  return Math.floor((d - start) / 86400000);
+}
+
+function pick(arr, offset) {
+  const d = new Date();
+  return arr[(dayOfYear(d) + offset) % arr.length];
+}
+
+function init() {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-US', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+  document.getElementById('date-display').textContent = dateStr;
+
+  const m = pick(meditations, 0);
+  document.getElementById('med-title').textContent = m.title;
+  document.getElementById('med-badge').innerHTML = `<span class="badge">⏱ ${m.duration}</span>`;
+  document.getElementById('med-desc').textContent = m.desc;
+  document.getElementById('med-tip').textContent = m.tip;
+
+  const p = pick(piano, 7);
+  document.getElementById('piano-title').textContent = p.title;
+  document.getElementById('piano-composer').textContent = p.composer;
+  document.getElementById('piano-mood').innerHTML = `<span class="mood-badge">${p.mood}</span>`;
+  document.getElementById('piano-desc').textContent = p.desc;
+
+  const f = pick(facts, 13);
+  document.getElementById('fact-emoji').textContent = f.emoji;
+  document.getElementById('fact-loc').innerHTML = `<span class="loc-badge">📍 ${f.loc}</span>`;
+  document.getElementById('fact-text').textContent = f.text;
+
+  const q = pick(quotes, 19);
+  document.getElementById('quote-text').textContent = `"${q.quote}"`;
+  document.getElementById('quote-reflection').textContent = q.reflection;
+
+  const person = family[dayOfYear(new Date()) % family.length];
+  const act = person.acts[Math.floor(dayOfYear(new Date()) / family.length) % person.acts.length];
+  document.getElementById('kind-name').textContent = `${person.emoji}  ${person.name}`;
+  document.getElementById('kind-relation').textContent = person.relation;
+  document.getElementById('kind-action').textContent = act;
+}
+
+init();
+</script>
+</body>
+</html>
